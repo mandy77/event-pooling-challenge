@@ -9,10 +9,16 @@ This service ingests event plans from external providers (XML over HTTP), stores
 - Events are **never deleted**. If a plan ever appears with `sell_mode=online`, it is marked as `ever_online` and will be returned by `/search` even if it disappears from later provider responses.
 - `/search` queries only the local database, so it remains fast and available even when the provider is down.
 
-## Run
+## Running the App
 
+Running on Docker
 ```bash
 make run
+```
+
+Running using built jar
+```bash
+make run-jar
 ```
 
 ## Endpoint
@@ -27,6 +33,12 @@ Once the app is running, open:
 - `http://localhost:8080/swagger-ui.html`
 - `http://localhost:8080/v3/api-docs`
 
+
+
+## Technology Stack Decision
+
+- **Java 17** was chosen for LTS stability, modern language features, and broad production support.
+- **Spring Boot** provides strong ecosystem support for web, scheduling, configuration, caching, and testing, enabling rapid, maintainable delivery with minimal boilerplate.
 
 ## Architecture
 

@@ -1,6 +1,7 @@
 package com.feverup.plans.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.time.Duration;
@@ -21,20 +22,24 @@ public class RedisCacheConfig {
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
+        mapper.activateDefaultTyping(
+            LaissezFaireSubTypeValidator.instance,
+            ObjectMapper.DefaultTyping.NON_FINAL
+        );
 
         RedisCacheConfiguration config =
                 RedisCacheConfiguration
                         .defaultCacheConfig()
                         .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
                                 new GenericJackson2JsonRedisSerializer(mapper)))
-                        .entryTtl(Duration.ofSeconds(60));
+                        .entryTtl(Duration.ofSeconds(30));
 
         RedisCacheManager redisManager = RedisCacheManager.builder(connectionFactory)
                                                           .cacheDefaults(config)
                                                           .build();
 
         CaffeineCacheManager fallbackManager = new CaffeineCacheManager();
-        fallbackManager.setCaffeine(Caffeine.newBuilder().expireAfterWrite(Duration.ofSeconds(60)));
+        fallbackManager.setCaffeine(Caffeine.newBuilder().expireAfterWrite(Duration.ofSeconds(30)));
 
         return new ResilientCacheManager(redisManager, fallbackManager);
     }

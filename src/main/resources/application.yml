@@ -27,9 +27,9 @@ spring:
       port: 6379
 
 providers:
-  connect-timeout-ms: 3000
+  connect-timeout-ms: 5000
   read-timeout-ms: 10000
-  sync-interval-ms: 60000
+  sync-interval-ms: 30000
   list:
     - id: fever
       base-url: https://provider.code-challenge.feverup.com

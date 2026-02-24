@@ -34,7 +34,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class SearchController {
 
     private static final String OK = "OK";
+    public static final String BAD_REQUEST_CODE = "400";
+    public static final String INTERNAL_ERROR_CODE = "500";
     private static final String BAD_REQUEST = "Bad Request (missing required parameters, wrong types...)";
+    private static final String BAD_REQUEST_MESSAGE = "Invalid Start time, must be before end time";
 
     private static final Logger logger = LoggerFactory.getLogger(SearchController.class);
 
@@ -57,7 +60,7 @@ public class SearchController {
                                               "data": {
                                                 "events": [
                                                   {
-                                                    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                                    "id": "fever:322-1643",
                                                     "title": "string",
                                                     "start_date": "2026-02-23",
                                                     "start_time": "22:38:19",
@@ -75,28 +78,35 @@ public class SearchController {
             ),
             @ApiResponse(responseCode = "400", description = BAD_REQUEST, content = {@Content(mediaType = "application/json")}),
     })
-    public ResponseEntity<SearchResponse> search(
+    public ResponseEntity<SearchResponse> searchEvents(
             @Parameter(description = "Return only events that starts after this date", required = true, example="2017-07-21T17:32:28Z")
             @RequestParam("starts_at") @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             OffsetDateTime startsAt,
             @Parameter(description = "Return only events that finishes before this date", required = true, example="2021-07-21T17:32:28Z")
             @RequestParam("ends_at") @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             OffsetDateTime endsAt) {
-
         if (endsAt.isBefore(startsAt)) {
-            return ResponseEntity.badRequest()
-                                 .body(new SearchResponse(new SearchResponse.Error("", "")));
+            return ResponseEntity
+                    .badRequest()
+                    .body(new SearchResponse(new SearchResponse.Error(BAD_REQUEST_CODE, BAD_REQUEST_MESSAGE)));
         }
 
-        List<PlanEvent> events = queryService.findEventsCached(startsAt, endsAt);
+        try {
+            List<PlanEvent> events = queryService.findEventsCached(startsAt, endsAt);
 
-        List<EventSummary> responseEvents =
-                events.stream()
-                      .sorted(Comparator.comparing(PlanEvent::getStartDate))
-                      .map(eventSummaryMapper::toSummary)
-                      .toList();
+            List<EventSummary> responseEvents =
+                    events.stream()
+                          .sorted(Comparator.comparing(PlanEvent::getStartDate))
+                          .map(eventSummaryMapper::toSummary)
+                          .toList();
 
-        logger.info("event retrieved: {}", responseEvents.size());
-        return ResponseEntity.ok(new SearchResponse(responseEvents));
+            logger.info("{} events retrieved", responseEvents.size());
+            return ResponseEntity.ok(new SearchResponse(responseEvents));
+
+        } catch (Exception ex) {
+            return ResponseEntity
+                    .internalServerError()
+                    .body(new SearchResponse(new SearchResponse.Error(INTERNAL_ERROR_CODE, ex.getMessage())));
+        }
     }
 }

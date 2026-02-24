@@ -1,6 +1,8 @@
 package com.feverup.plans.controller;
 
 
+import static com.feverup.plans.controller.SearchController.BAD_REQUEST_CODE;
+import static com.feverup.plans.controller.SearchController.INTERNAL_ERROR_CODE;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -35,11 +37,10 @@ class SearchControllerApiTest {
         String startsAt = OffsetDateTime.now().toString();
         String endsAt = OffsetDateTime.now().minusDays(1).toString();
         mockMvc.perform(get("/search")
-                .param("starts_at", startsAt)
-                .param("ends_at", endsAt))
-                .andExpect(status().isBadRequest())
-               .andExpect(jsonPath("$.error.code").value(""))
-        ;
+                                .param("starts_at", startsAt)
+                                .param("ends_at", endsAt))
+               .andExpect(status().isBadRequest())
+               .andExpect(jsonPath("$.error.code").value(BAD_REQUEST_CODE));
     }
 
     @Test
@@ -100,5 +101,19 @@ class SearchControllerApiTest {
                 .andExpect(jsonPath("$.data.events[0].id").value("1"))
                 .andExpect(jsonPath("$.data.events[0].min_price").value(0))
                 .andExpect(jsonPath("$.data.events[0].max_price").value(0));
+    }
+
+
+    @Test
+    void search_returnsInternalError_whenQueryServiceFails() throws Exception {
+        OffsetDateTime startsAt = OffsetDateTime.now();
+        OffsetDateTime endsAt = startsAt.plusDays(1);
+        when(planQueryService.findEventsCached(startsAt, endsAt)).thenThrow(new RuntimeException());
+        mockMvc.perform(get("/search")
+                                .param("starts_at", startsAt.toString())
+                                .param("ends_at", endsAt.toString())
+                                .accept(MediaType.APPLICATION_JSON))
+               .andExpect(status().isInternalServerError())
+               .andExpect(jsonPath("$.error.code").value(INTERNAL_ERROR_CODE));
     }
 }

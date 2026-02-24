@@ -74,7 +74,7 @@ public class PlanSyncService {
             toSave.setEverOnline(toSave.isEverOnline() || online);
 
             eventPersistenceApi.save(toSave);
-            logger.info("Event id {} from the provider {} saved", toSave.getId(), providerId);
+            logger.info("Event id [{}] from the provider [{}] saved", toSave.getId(), providerId);
         } catch (Exception ex) {
             logger.error("Failed to save event id {}: {}", id, ex, ex);
         }
