@@ -27,6 +27,9 @@ spring:
       port: 6379
 
 providers:
+  retry-max-attempts: 3
+  retry-initial-backoff-ms: 200
+  retry-max-backoff-ms: 2000
   connect-timeout-ms: 5000
   read-timeout-ms: 10000
   sync-interval-ms: 30000

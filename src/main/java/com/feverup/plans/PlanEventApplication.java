@@ -10,7 +10,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableCaching
 public class PlanEventApplication {
     public static void main(String[] args) {
-        System.setProperty("io.netty.resolver.dns.macos.native", "false");
         SpringApplication.run(PlanEventApplication.class, args);
     }
 }

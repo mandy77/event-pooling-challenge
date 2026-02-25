@@ -8,6 +8,7 @@ import com.feverup.plans.config.ProviderClientConfig;
 import com.feverup.plans.config.ProviderDefinition;
 import com.feverup.plans.config.ProvidersProperties;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,6 +62,46 @@ class ProviderClientIT {
 
         assertNotNull(body);
         assertEquals("<planList></planList>", body);
+    }
+
+    @Test
+    void fetchEventsXml_retriesOn5xxThenSucceeds() {
+        AtomicInteger attempts = new AtomicInteger(0);
+        server = HttpServer.create()
+            .port(0)
+            .route(routes -> routes.get("/api/events", (request, response) -> {
+                int current = attempts.incrementAndGet();
+                if (current <= 2) {
+                    return response.status(500).send();
+                }
+                return response.status(200)
+                    .header("Content-Type", "application/xml")
+                    .sendString(Mono.just("<planList></planList>"));
+            }))
+            .bindNow(Duration.ofSeconds(5));
+
+        baseUrl = "http://localhost:" + server.port();
+
+        ProvidersProperties properties = new ProvidersProperties();
+        properties.setConnectTimeoutMs(2000);
+        properties.setReadTimeoutMs(2000);
+        properties.setRetryMaxAttempts(3);
+        properties.setRetryInitialBackoffMs(10);
+        properties.setRetryMaxBackoffMs(50);
+
+        ProviderDefinition provider = new ProviderDefinition();
+        provider.setId("test");
+        provider.setBaseUrl(baseUrl);
+        provider.setEventsPath("/api/events");
+
+        ProviderClientConfig config = new ProviderClientConfig();
+        ProviderClient client = new ProviderClient(config.providerWebClientBuilder(properties), properties);
+
+        String body = client.fetchEventsXml(provider).block(Duration.ofSeconds(2));
+
+        assertNotNull(body);
+        assertEquals("<planList></planList>", body);
+        assertEquals(3, attempts.get());
     }
 
     @Test

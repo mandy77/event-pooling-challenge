@@ -10,8 +10,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 @ConfigurationProperties(prefix = "providers")
 public class ProvidersProperties {
-    private int connectTimeoutMs = 3000;
+    private int connectTimeoutMs = 5000;
     private int readTimeoutMs = 10000;
-    private long syncIntervalMs = 60000;
+    private long syncIntervalMs = 30000;
+
+    private int retryMaxAttempts = 3;
+    private long retryInitialBackoffMs = 200;
+    private long retryMaxBackoffMs = 2000;
     private List<ProviderDefinition> list = new ArrayList<>();
 }

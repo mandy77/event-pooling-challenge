@@ -33,7 +33,7 @@ Once the app is running, open:
 - `http://localhost:8080/swagger-ui.html`
 - `http://localhost:8080/v3/api-docs`
 
-
+----------------
 
 ## Technology Stack Decision
 
@@ -90,6 +90,24 @@ This split keeps the core model insulated from HTTP, XML, and persistence detail
 6. **DTO mapping in the web adapter**
    - Domain models remain transport-agnostic.
    - Mapping logic lives in a dedicated `EventSummaryMapper`.
+
+## Retry Strategy
+
+Provider calls are retried to handle transient failures without impacting the search endpoint. The client retries only on:
+
+- 5xx responses
+- network errors (`WebClientRequestException`)
+- timeouts
+
+Backoff is exponential with configurable limits:
+
+- `providers.retry-max-attempts`
+- `providers.retry-initial-backoff-ms`
+- `providers.retry-max-backoff-ms`
+
+This keeps the sync process resilient while avoiding infinite or aggressive retry storms.
+
+Future enhancement: add a circuit breaker (e.g., Resilience4j) to stop calling a failing provider for a cooldown window and protect downstream resources.
 
 ## Tradeoffs
 
