@@ -1,4 +1,4 @@
-package com.feverup.plans.adapter.provider;
+package com.feverup.plans.adapter.provider.fever;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;

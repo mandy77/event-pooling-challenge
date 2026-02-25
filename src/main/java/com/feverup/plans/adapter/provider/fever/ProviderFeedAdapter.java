@@ -1,4 +1,4 @@
-package com.feverup.plans.adapter.provider;
+package com.feverup.plans.adapter.provider.fever;
 
 import com.feverup.plans.client.ProviderClient;
 import com.feverup.plans.config.ProviderDefinition;
@@ -14,7 +14,6 @@ import java.util.List;
 
 import com.feverup.plans.domain.port.ProviderFeedApi;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
 
 @Component
 public class ProviderFeedAdapter implements ProviderFeedApi {
@@ -27,10 +26,13 @@ public class ProviderFeedAdapter implements ProviderFeedApi {
     }
 
     @Override
-    public Mono<List<PlanEvent>> fetchPlanEvents(ProviderDefinition provider) {
-        return client.fetchEventsXml(provider)
-            .map(parser::parse)
-            .map(envelope -> toPlanEvents(provider, envelope));
+    public List<PlanEvent> fetchPlanEvents(ProviderDefinition provider) {
+        String xml = client.fetchEventsXml(provider).block();
+        ProviderXmlEnvelope envelope = parser.parse(xml);
+        if (envelope == null) {
+            return List.of();
+        }
+        return toPlanEvents(provider, envelope);
     }
 
     private List<PlanEvent> toPlanEvents(ProviderDefinition provider, ProviderXmlEnvelope envelope) {

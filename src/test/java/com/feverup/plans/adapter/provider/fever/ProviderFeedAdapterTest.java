@@ -1,4 +1,8 @@
-package com.feverup.plans.adapter.provider;
+package com.feverup.plans.adapter.provider.fever;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 import com.feverup.plans.client.ProviderClient;
 import com.feverup.plans.config.ProviderDefinition;
@@ -12,10 +16,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProviderFeedAdapterTest {
@@ -62,7 +62,7 @@ class ProviderFeedAdapterTest {
         when(client.fetchEventsXml(any())).thenReturn(Mono.just("xml"));
         when(parser.parse("xml")).thenReturn(envelope);
 
-        List<PlanEvent> events = adapter.fetchPlanEvents(provider).block();
+        List<PlanEvent> events = adapter.fetchPlanEvents(provider);
 
         assertNotNull(events);
         assertEquals(1, events.size());
@@ -90,9 +90,9 @@ class ProviderFeedAdapterTest {
     void fetchPlanEvents_returnsEmpty_whenEnvelopeIsNull() {
         ProviderDefinition provider = new ProviderDefinition();
         when(client.fetchEventsXml(any())).thenReturn(Mono.just("xml"));
-        when(parser.parse("xml")).thenReturn(new ProviderXmlEnvelope());
+        when(parser.parse("xml")).thenReturn(null);
 
-        List<PlanEvent> events = adapter.fetchPlanEvents(provider).block();
+        List<PlanEvent> events = adapter.fetchPlanEvents(provider);
 
         assertNotNull(events);
         assertTrue(events.isEmpty());
@@ -109,7 +109,7 @@ class ProviderFeedAdapterTest {
         when(client.fetchEventsXml(any())).thenReturn(Mono.just("xml"));
         when(parser.parse("xml")).thenReturn(envelope);
 
-        List<PlanEvent> events = adapter.fetchPlanEvents(provider).block();
+        List<PlanEvent> events = adapter.fetchPlanEvents(provider);
 
         assertNotNull(events);
         assertTrue(events.isEmpty());
@@ -148,7 +148,7 @@ class ProviderFeedAdapterTest {
         when(client.fetchEventsXml(any())).thenReturn(Mono.just("xml"));
         when(parser.parse("xml")).thenReturn(envelope);
 
-        List<PlanEvent> events = adapter.fetchPlanEvents(provider).block();
+        List<PlanEvent> events = adapter.fetchPlanEvents(provider);
 
         assertNotNull(events);
         assertEquals(1, events.size());

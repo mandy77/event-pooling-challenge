@@ -8,9 +8,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(scanBasePackages = "com.feverup.plans")
 @EnableScheduling
 @EnableCaching
-public class PlanIntegrationApplication {
+public class PlanEventApplication {
     public static void main(String[] args) {
         System.setProperty("io.netty.resolver.dns.macos.native", "false");
-        SpringApplication.run(PlanIntegrationApplication.class, args);
+        SpringApplication.run(PlanEventApplication.class, args);
     }
 }

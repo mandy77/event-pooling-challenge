@@ -2,66 +2,98 @@ package com.feverup.plans.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
+import com.feverup.plans.config.ProviderDefinition;
+import com.feverup.plans.config.ProvidersProperties;
 import com.feverup.plans.domain.model.PlanEvent;
 import com.feverup.plans.domain.port.EventPersistenceApi;
-import java.lang.reflect.Method;
+import com.feverup.plans.domain.port.ProviderFeedApi;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class PlanSyncServiceTest {
+
+    @Mock
+    private ProviderFeedApi providerFeedApi;
+
     @Mock
     private EventPersistenceApi eventPersistenceApi;
 
+    @Mock
+    private ProvidersProperties providersProperties;
+
+    @InjectMocks
     private PlanSyncService planSyncService;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        planSyncService = new PlanSyncService(null, eventPersistenceApi, null);
-    }
-
     @Test
-    void upsertPlanEvents_savesAllEvents() throws Exception {
+    void syncOnce_savesEventsForConfiguredProviders() {
+        ProviderDefinition provider = new ProviderDefinition();
+        provider.setId("prov");
+
         PlanEvent event1 = new PlanEvent();
-        event1.setId("1");
+        event1.setId("prov:ext1");
         event1.setProviderId("prov");
         event1.setExternalId("ext1");
+
         PlanEvent event2 = new PlanEvent();
-        event2.setId("2");
+        event2.setId("prov:ext2");
         event2.setProviderId("prov");
         event2.setExternalId("ext2");
 
+        when(providersProperties.getList()).thenReturn(List.of(provider));
+        when(providerFeedApi.fetchPlanEvents(provider)).thenReturn(List.of(event1, event2));
         when(eventPersistenceApi.findById(any())).thenReturn(Optional.empty());
 
-        Method method = PlanSyncService.class.getDeclaredMethod("upsertPlanEvents", String.class, List.class);
-        method.setAccessible(true);
-        assertDoesNotThrow(() -> method.invoke(planSyncService, "prov", List.of(event1, event2)));
+        planSyncService.syncOnce();
+
+        verify(providerFeedApi).fetchPlanEvents(provider);
         verify(eventPersistenceApi, times(2)).save(any(PlanEvent.class));
     }
 
     @Test
-    void upsertPlanEvents_continuesOnException() throws Exception {
-        PlanEvent event1 = new PlanEvent();
-        event1.setId("1");
-        event1.setProviderId("prov");
-        event1.setExternalId("ext1");
-        PlanEvent event2 = new PlanEvent();
-        event2.setId("2");
-        event2.setProviderId("prov");
-        event2.setExternalId("ext2");
-        when(eventPersistenceApi.findById(any())).thenReturn(Optional.empty());
-        doThrow(new RuntimeException("DB error")).when(eventPersistenceApi).save(argThat(e -> "1".equals(e.getId())));
+    void syncOnce_skipsWhenNoProvidersConfigured() {
+        when(providersProperties.getList()).thenReturn(List.of());
 
-        Method method = PlanSyncService.class.getDeclaredMethod("upsertPlanEvents", String.class, List.class);
-        method.setAccessible(true);
-        assertDoesNotThrow(() -> method.invoke(planSyncService, "prov", List.of(event1, event2)));
-        verify(eventPersistenceApi, times(2)).save(any(PlanEvent.class));
+        planSyncService.syncOnce();
+
+        verifyNoInteractions(providerFeedApi);
+        verifyNoInteractions(eventPersistenceApi);
+    }
+
+    @Test
+    void syncOnce_handlesProviderFailureWithoutThrowing() {
+        ProviderDefinition provider = new ProviderDefinition();
+        provider.setId("prov");
+        when(providersProperties.getList()).thenReturn(List.of(provider));
+        when(providerFeedApi.fetchPlanEvents(provider)).thenThrow(new RuntimeException("boom"));
+
+        assertDoesNotThrow(() -> planSyncService.syncOnce());
+
+        verify(providerFeedApi).fetchPlanEvents(provider);
+        verifyNoInteractions(eventPersistenceApi);
+    }
+
+    @Test
+    void syncOnce_skipsEventsWithNullId() {
+        ProviderDefinition provider = new ProviderDefinition();
+        provider.setId("prov");
+
+        PlanEvent badEvent = new PlanEvent();
+        badEvent.setId(null);
+
+        when(providersProperties.getList()).thenReturn(List.of(provider));
+        when(providerFeedApi.fetchPlanEvents(provider)).thenReturn(List.of(badEvent));
+
+        planSyncService.syncOnce();
+
+        verify(providerFeedApi).fetchPlanEvents(provider);
+        verifyNoInteractions(eventPersistenceApi);
     }
 }

@@ -8,18 +8,16 @@ import com.feverup.plans.domain.port.ProviderFeedApi;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Mono;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class PlanSyncService {
-    private static final Logger logger = LoggerFactory.getLogger(PlanSyncService.class);
-
+    
     private final ProviderFeedApi providerFeedApi;
     private final EventPersistenceApi eventPersistenceApi;
     private final ProvidersProperties providersProperties;
@@ -31,15 +29,13 @@ public class PlanSyncService {
 
     public void syncOnce() {
         for (ProviderDefinition provider : providersProperties.getList()) {
-            providerFeedApi
-                    .fetchPlanEvents(provider)
-                    .doOnNext(records -> logger.info("Fetched {} records from provider {}", records.size(), provider.getId()))
-                    .doOnNext(records -> upsertPlanEvents(provider.getId(), records))
-                    .onErrorResume(ex -> {
-                        logger.warn("Sync failed for provider {}: {}", provider.getId(), ex.toString());
-                        return Mono.empty();
-                    })
-                    .subscribe();
+            try {
+                List<PlanEvent> records = providerFeedApi.fetchPlanEvents(provider);
+                log.info("Fetched {} records from provider {}", records.size(), provider.getId());
+                upsertPlanEvents(provider.getId(), records);
+            } catch (Exception ex) {
+                log.warn("Sync failed for provider {}: {}", provider.getId(), ex.toString());
+            }
         }
     }
 
@@ -54,6 +50,9 @@ public class PlanSyncService {
     private void saveEventPlan(String providerId, PlanEvent incoming, OffsetDateTime now) {
         String id = incoming.getId();
         try {
+            if (id == null) {
+                return;
+            }
 
             PlanEvent toSave = eventPersistenceApi
                 .findById(id)
@@ -74,9 +73,9 @@ public class PlanSyncService {
             toSave.setEverOnline(toSave.isEverOnline() || online);
 
             eventPersistenceApi.save(toSave);
-            logger.info("Event id [{}] from the provider [{}] saved", toSave.getId(), providerId);
+            log.info("Event id [{}] from the provider [{}] saved", toSave.getId(), providerId);
         } catch (Exception ex) {
-            logger.error("Failed to save event id {}: {}", id, ex, ex);
+            log.error("Failed to save event id {}: {}", id, ex, ex);
         }
     }
 }

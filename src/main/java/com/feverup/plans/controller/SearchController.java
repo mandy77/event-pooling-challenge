@@ -18,8 +18,7 @@ import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -27,6 +26,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @Validated
 @RestController
 @AllArgsConstructor
@@ -38,9 +38,7 @@ public class SearchController {
     public static final String INTERNAL_ERROR_CODE = "500";
     private static final String BAD_REQUEST = "Bad Request (missing required parameters, wrong types...)";
     private static final String BAD_REQUEST_MESSAGE = "Invalid Start time, must be before end time";
-
-    private static final Logger logger = LoggerFactory.getLogger(SearchController.class);
-
+    
     private final PlanQueryService queryService;
     private final EventSummaryMapper eventSummaryMapper;
 
@@ -100,7 +98,7 @@ public class SearchController {
                           .map(eventSummaryMapper::toSummary)
                           .toList();
 
-            logger.info("{} events retrieved", responseEvents.size());
+            log.info("{} events retrieved", responseEvents.size());
             return ResponseEntity.ok(new SearchResponse(responseEvents));
 
         } catch (Exception ex) {
