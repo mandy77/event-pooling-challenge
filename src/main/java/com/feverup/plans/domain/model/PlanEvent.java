@@ -11,6 +11,7 @@ import lombok.Setter;
 @Getter
 public class PlanEvent {
     private String id;
+    private Long version;
     private String providerId;
     private String externalId;
     private String title;

@@ -32,7 +32,7 @@ providers:
   retry-max-backoff-ms: 2000
   connect-timeout-ms: 5000
   read-timeout-ms: 10000
-  sync-interval-ms: 30000
+  sync-interval-ms: 60000
   list:
     - id: fever
       base-url: https://provider.code-challenge.feverup.com

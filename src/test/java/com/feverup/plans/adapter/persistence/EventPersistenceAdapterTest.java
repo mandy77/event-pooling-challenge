@@ -46,6 +46,24 @@ class EventPersistenceAdapterTest {
     }
 
     @Test
+    void findByIdForUpdate_returnsPlanEvent_whenEntityExists() {
+        EventEntity entity = new EventEntity();
+        entity.setId("locked-1");
+        entity.setTitle("Locked Event");
+        entity.setStartDate(OffsetDateTime.now());
+        entity.setEndDate(OffsetDateTime.now().plusHours(2));
+        entity.setEverOnline(true);
+        entity.setZones(Collections.emptyList());
+        when(repository.findByIdForUpdate("locked-1")).thenReturn(Optional.of(entity));
+
+        Optional<PlanEvent> result = adapter.findByIdForUpdate("locked-1");
+
+        assertTrue(result.isPresent());
+        assertEquals("locked-1", result.get().getId());
+        assertEquals("Locked Event", result.get().getTitle());
+    }
+
+    @Test
     void save_callsRepositorySave_withConvertedEntity() {
         PlanEvent event = new PlanEvent();
         event.setId("3");

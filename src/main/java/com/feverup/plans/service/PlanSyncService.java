@@ -50,7 +50,8 @@ public class PlanSyncService {
     private void saveEventPlan(String providerId, PlanEvent incoming, OffsetDateTime now) {
         String id = incoming.getId();
         try {
-            if (id == null) {
+            if (id == null || id.isBlank()) {
+                log.warn("Skipping provider [{}] event with missing id", providerId);
                 return;
             }
 

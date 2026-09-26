@@ -8,6 +8,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,6 +24,10 @@ public class EventEntity {
     @Id
     @Column(name = "event_id", nullable = false)
     private String id;
+
+    @Version
+    @Column(name = "entity_version")
+    private Long version;
 
     @Column(name = "provider_id")
     private String providerId;

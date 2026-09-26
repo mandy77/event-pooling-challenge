@@ -8,6 +8,8 @@ import java.util.Optional;
 public interface EventPersistenceApi {
     Optional<PlanEvent> findById(String id);
 
+    Optional<PlanEvent> findByIdForUpdate(String id);
+
     void save(PlanEvent event);
 
     List<PlanEvent> findByDateRange(OffsetDateTime startsAt, OffsetDateTime endsAt);

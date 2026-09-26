@@ -24,6 +24,11 @@ public class EventPersistenceAdapter implements EventPersistenceApi {
     }
 
     @Override
+    public Optional<PlanEvent> findByIdForUpdate(String id) {
+        return repository.findByIdForUpdate(id).map(this::toDomain);
+    }
+
+    @Override
     public void save(PlanEvent event) {
         repository.save(toEntity(event));
     }
@@ -41,6 +46,7 @@ public class EventPersistenceAdapter implements EventPersistenceApi {
     private PlanEvent toDomain(EventEntity entity) {
         PlanEvent event = new PlanEvent();
         event.setId(entity.getId());
+        event.setVersion(entity.getVersion());
         event.setProviderId(entity.getProviderId());
         event.setExternalId(entity.getExternalId());
         event.setTitle(entity.getTitle());
@@ -69,6 +75,7 @@ public class EventPersistenceAdapter implements EventPersistenceApi {
         EventEntity entity = new EventEntity();
 
         entity.setId(event.getId());
+        entity.setVersion(event.getVersion());
         entity.setProviderId(event.getProviderId());
         entity.setExternalId(event.getExternalId());
         entity.setTitle(event.getTitle());
